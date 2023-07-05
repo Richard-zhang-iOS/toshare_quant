@@ -27,14 +27,18 @@ class TopTenShareholder():
 
     def shareholder_increases(self,shareholder_df):
         result_year = shareholder_df.groupby('end_date')['hold_amount'].sum()
+        # result = shareholder_df.groupby('end_date')
+        df1 = shareholder_df.groupby(['end_date']).agg({"hold_amount": "sum"})
         shareholder_arr = np.array(result_year)
-        return_arr = []
         if len(shareholder_arr) > 1:
             last1 = shareholder_arr[len(shareholder_arr) - 1]
             last2 = shareholder_arr[len(shareholder_arr) - 2]
             percent = (last1 - last2) / last2
             return percent
         return 0
+
+    def groupby_end_date(self, df):
+        buy_sig = df["hold_amount"].values.sum()
 
     def get_stock_list(self):
         data = pro.stock_basic(fields='ts_code,symbol,name,fullname,industry,list_date')
@@ -75,12 +79,16 @@ class TopTenShareholder():
 
             good_stock_dic = {}
             for code in index_list:
-                share_holder_df1 = model.get_shareholder(code, True)
-                share_holder_df2 = model.get_shareholder(code, False)
-                percent1 = model.shareholder_increases(share_holder_df1)
-                percent2 = model.shareholder_increases(share_holder_df2)
-                if percent1 > 0 and percent2 > 0:
-                    good_stock_dic[code] = percent2
+                if not info.is_a_market(code):
+                    continue
+                share_holder_df1 = self.get_shareholder(code, True)
+                share_holder_df2 = self.get_shareholder(code, False)
+                percent1 = self.shareholder_increases(share_holder_df1)
+                percent2 = self.shareholder_increases(share_holder_df2)
+                if percent1 > 0 and percent2 >= 0:
+                    good_stock_dic[code] = percent1
+                    # if percent1 != percent2:
+                    #     print("code:{},percent1:{},percent2:{}".format(code, percent1, percent2))
                 time.sleep(0.15)
             if len(good_stock_dic) > 0:
                 good_stock_dic = sorted(good_stock_dic.items(), key=lambda x: x[1], reverse=True)
@@ -99,7 +107,11 @@ class TopTenShareholder():
 if __name__ == '__main__':
     model = TopTenShareholder()
     model.test_case(1)
-    # model.get_shareholder('002252.SZ')
+    # code = '001313.SZ'
+    # share_holder_df1 = model.get_shareholder(code, True)
+    # share_holder_df2 = model.get_shareholder(code, False)
+    # percent1 = model.shareholder_increases(share_holder_df1)
+    # percent2 = model.shareholder_increases(share_holder_df2)
     # aaa = {}
     # aaa['00001'] = 0.1
     # aaa['000019'] = 0.2
