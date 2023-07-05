@@ -14,7 +14,7 @@ def is_a_market(x):
     aaa = x.split(".")
     if len(aaa)>1:
        houzui = aaa[len(aaa)-1]
-       if houzui == 'SH' or houzui == 'SZ' or houzui == 'BJ':
+       if houzui == 'SH' or houzui == 'SZ':
            return True
     return False
 

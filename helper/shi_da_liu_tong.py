@@ -6,6 +6,7 @@ import numpy as np
 import datetime
 import os
 import math
+import time
 
 token = '5906ff18c34dff7b47f8a564b5ae483465b7be3bf1c1bafe76c73b41'
 ts.set_token(token)
@@ -15,8 +16,11 @@ pro = ts.pro_api()
 
 class TopTenShareholder():
 
-    def get_shareholder(self,stock_code):
-        shareholder = pro.top10_floatholders(ts_code=stock_code)
+    def get_shareholder(self,stock_code,isfloat):
+        if isfloat:
+            shareholder = pro.top10_floatholders(ts_code=stock_code)
+        else:
+            shareholder = pro.top10_holders(ts_code=stock_code)
         shareholder_df = pd.DataFrame(shareholder)
         return shareholder_df
 
@@ -52,11 +56,11 @@ class TopTenShareholder():
             classify = self.get_tonghuashun_classify()
             index_codes = classify['ts_code'].values
             index_names = classify['name'].values
-            if len(index_codes) > 150:
-                # index_codes = index_codes[0:150]
-                # index_names = index_names[0:150]
-                index_codes = index_codes[150:]
-                index_names = index_names[150:]
+            # if len(index_codes) > 150:
+            #     # index_codes = index_codes[0:150]
+            #     # index_names = index_names[0:150]
+            #     index_codes = index_codes[150:]
+            #     index_names = index_names[150:]
         else:
             classify = self.get_index_classify()
             index_codes = classify['index_code'].values
@@ -71,10 +75,13 @@ class TopTenShareholder():
 
             good_stock_dic = {}
             for code in index_list:
-                share_holder_df = model.get_shareholder(code)
-                percent = model.shareholder_increases(share_holder_df)
-                if percent > 0:
-                    good_stock_dic[code] = percent
+                share_holder_df1 = model.get_shareholder(code, True)
+                share_holder_df2 = model.get_shareholder(code, False)
+                percent1 = model.shareholder_increases(share_holder_df1)
+                percent2 = model.shareholder_increases(share_holder_df2)
+                if percent1 > 0 and percent2 > 0:
+                    good_stock_dic[code] = percent2
+                time.sleep(0.15)
             if len(good_stock_dic) > 0:
                 good_stock_dic = sorted(good_stock_dic.items(), key=lambda x: x[1], reverse=True)
                 index_code_dic[index_name] = good_stock_dic
@@ -82,7 +89,7 @@ class TopTenShareholder():
                 index_percent_dic[index_name] = index_percent
                 if index_percent > 0.5:
                     print(
-                        '当前行业：{},行业名称:{},百分比:{},股票列表:{}'.format(index_code, index_name, index_percent,
+                        '当前行业：{},行业名称:{},个数:{},百分比:{},股票列表:{}'.format(index_code, index_name, len(index_list),index_percent,
                                                                                good_stock_dic))
         index_percent_dic = sorted(index_percent_dic.items(), key=lambda x: x[1], reverse=True)
         print('行业排序：{}'.format(index_percent_dic))
@@ -92,6 +99,7 @@ class TopTenShareholder():
 if __name__ == '__main__':
     model = TopTenShareholder()
     model.test_case(1)
+    # model.get_shareholder('002252.SZ')
     # aaa = {}
     # aaa['00001'] = 0.1
     # aaa['000019'] = 0.2
