@@ -18,6 +18,7 @@ class TopTenShareholder():
 
     def get_shareholder(self,stock_code,isfloat):
         if isfloat:
+            print('正在处理：{}'.format(stock_code))
             shareholder = pro.top10_floatholders(ts_code=stock_code)
         else:
             shareholder = pro.top10_holders(ts_code=stock_code)
@@ -30,7 +31,7 @@ class TopTenShareholder():
         # result = shareholder_df.groupby('end_date')
         df1 = shareholder_df.groupby(['end_date']).agg({"hold_amount": "sum"})
         shareholder_arr = np.array(result_year)
-        if len(shareholder_arr) > 1:
+        if len(shareholder_arr) > 3:
             last1 = shareholder_arr[len(shareholder_arr) - 1]
             last2 = shareholder_arr[len(shareholder_arr) - 2]
             percent = (last1 - last2) / last2
@@ -45,11 +46,11 @@ class TopTenShareholder():
         return data
 
     def get_index_classify(self):
-        classify = pro.index_classify(level='L1', src='SW2021')
+        classify = pro.index_classify(level='L2', src='SW2021')
         return classify
 
     def get_tonghuashun_classify(self):
-        classify = pro.ths_index(exchange='A',type='I')
+        classify = pro.ths_index(exchange='A',type='N')
         return classify
 
     def test_case(self,type):
@@ -60,11 +61,6 @@ class TopTenShareholder():
             classify = self.get_tonghuashun_classify()
             index_codes = classify['ts_code'].values
             index_names = classify['name'].values
-            # if len(index_codes) > 150:
-            #     # index_codes = index_codes[0:150]
-            #     # index_names = index_names[0:150]
-            #     index_codes = index_codes[150:]
-            #     index_names = index_names[150:]
         else:
             classify = self.get_index_classify()
             index_codes = classify['index_code'].values
@@ -83,13 +79,16 @@ class TopTenShareholder():
                     continue
                 share_holder_df1 = self.get_shareholder(code, True)
                 share_holder_df2 = self.get_shareholder(code, False)
+                if len(share_holder_df1) <= 0 or len(share_holder_df2) <= 0:
+                    continue
                 percent1 = self.shareholder_increases(share_holder_df1)
                 percent2 = self.shareholder_increases(share_holder_df2)
                 if percent1 > 0 and percent2 >= 0:
                     good_stock_dic[code] = percent1
                     # if percent1 != percent2:
                     #     print("code:{},percent1:{},percent2:{}".format(code, percent1, percent2))
-                time.sleep(0.15)
+                # time.sleep(0.5)
+                time.sleep(0.2)
             if len(good_stock_dic) > 0:
                 good_stock_dic = sorted(good_stock_dic.items(), key=lambda x: x[1], reverse=True)
                 index_code_dic[index_name] = good_stock_dic
@@ -102,7 +101,7 @@ class TopTenShareholder():
         index_percent_dic = sorted(index_percent_dic.items(), key=lambda x: x[1], reverse=True)
         print('行业排序：{}'.format(index_percent_dic))
         for index_temp in index_percent_dic:
-            print('所属行业:{},个股排名:{}'.format(index_temp[0], index_temp[1], index_code_dic[index_temp[0]]))
+            print('所属行业:{},百分比:{},入选个数:{}，个股排名:{}'.format(index_temp[0], index_temp[1],len(index_code_dic[index_temp[0]]), index_code_dic[index_temp[0]]))
 
 if __name__ == '__main__':
     model = TopTenShareholder()
